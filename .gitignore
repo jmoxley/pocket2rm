@@ -5,6 +5,7 @@
 *.so
 *.dylib
 *.arm
+main
 
 # Test binary, built with `go test -c`
 *.test
@@ -20,3 +21,9 @@ articles
 
 #MAC OS
 .DS_Store
+
+go.mod
+go.sum
+
+# IDE files
+.idea

@@ -21,14 +21,29 @@ compile_bin_files() {
   printf "\ncompiling pocket2rm...\n"
 
   cd "$INSTALL_SCRIPT_DIR/cmd/pocket2rm-setup"
+
+  if [ ! -f ./go.mod ]; then
+    go mod init pocket2rm-setup
+  fi
+
   go get
   go build main.go
 
   cd "$INSTALL_SCRIPT_DIR/cmd/pocket2rm"
+
+  if [ ! -f ./go.mod ]; then
+    go mod init pocket2rm
+  fi
+
   go get
   GOOS=linux GOARCH=arm GOARM=7 go build -o pocket2rm.arm
 
   cd "$INSTALL_SCRIPT_DIR/cmd/pocket2rm-reload"
+
+  if [ ! -f ./go.mod ]; then
+    go mod init pocket2rm-reload
+  fi
+
   go get
   GOOS=linux GOARCH=arm GOARM=7 go build -o pocket2rm-reload.arm
 
