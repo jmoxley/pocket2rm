@@ -8,7 +8,10 @@ check_go() {
     return 1
   fi
 
-  export GOPATH=$HOME
+  if [ -z "${GOPATH}" ]; then
+    export GOPATH=$HOME
+  fi
+
   export GOBIN=$GOPATH/bin
   mkdir -p "$GOBIN"
 }
