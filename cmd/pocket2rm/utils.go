@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -139,12 +140,27 @@ func (item Item) Title() string {
 	return title
 }
 
+func getUserHomeDir() string {
+	currentUser, err := user.Current()
+
+	if err != nil {
+		fmt.Println("Could not get user")
+		panic(1)
+	}
+
+	return currentUser.HomeDir
+}
+
 func articeFolderPath() string {
-	return "/home/root/.local/share/remarkable/xochitl/"
+	userHomeDir := getUserHomeDir()
+
+	return filepath.Join(userHomeDir, ".local/share/remarkable/xochitl/")
 }
 
 func getConfigPath() string {
-	return "/home/root/.pocket2rm"
+	userHomeDir := getUserHomeDir()
+
+	return filepath.Join(userHomeDir, ".pocket2rm")
 }
 
 func writeFile(fileName string, fileContent []byte) {
