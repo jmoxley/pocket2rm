@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -28,11 +27,12 @@ type ExtraMetaData struct {
 
 //Config silence lint
 type Config struct {
-	ConsumerKey      string   `yaml:"consumerKey"`
-	AccessToken      string   `yaml:"accessToken"`
-	ReloadUUID       string   `yaml:"reloadUUID"`
-	PocketFolderUUID string   `yaml:"pocketFolderUUID"`
-	HandledArticles  []string `yaml:"handledArticles"` //id of article //TODO: should be converted to set for better time complexity
+	ConsumerKey      string              `yaml:"consumerKey"`
+	AccessToken      string              `yaml:"accessToken"`
+	RequestParams    map[string]string   `yaml:"requestParams"`
+	ReloadUUID       string              `yaml:"reloadUUID"`
+	PocketFolderUUID string              `yaml:"pocketFolderUUID"`
+	HandledArticles  []string            `yaml:"handledArticles"` //id of article //TODO: should be converted to set for better time complexity
 }
 
 //MetaData silence lint
@@ -114,6 +114,9 @@ type Item struct {
 type PocketRetrieve struct {
 	ConsumerKey string `json:"consumer_key"`
 	AccessToken string `json:"access_token"`
+	Count       string `json:"count"`
+	DetailType  string `json:"detailType"`
+	Sort        string `json:"sort"`
 }
 
 // Time silence lint
@@ -328,7 +331,14 @@ func getPocketItems() ([]pocketItem, error) {
 	config := getConfig()
 
 	retrieveResult := &PocketResult{}
-	body, _ := json.Marshal(PocketRetrieve{config.ConsumerKey, config.AccessToken})
+
+	body, _ := json.Marshal(PocketRetrieve{
+		config.ConsumerKey,
+		config.AccessToken,
+		config.RequestParams["count"],
+		config.RequestParams["detailType"],
+		config.RequestParams["sort"],
+	})
 
 	req, _ := http.NewRequest("POST", "https://getpocket.com/v3/get", bytes.NewReader(body))
 	req.Header.Add("X-Accept", "application/json")
@@ -356,7 +366,7 @@ func getPocketItems() ([]pocketItem, error) {
 	}
 
 	// sort by latest added article first
-	sort.Sort(sort.Reverse(ByAdded(items)))
+	//sort.Sort(sort.Reverse(ByAdded(items)))
 	return items, nil
 }
 
@@ -386,7 +396,7 @@ func registerHandled(article pocketItem) {
 }
 
 func getReadableArticle(url *url.URL) (string, string, error) {
-	timeout, _ := time.ParseDuration("10s")
+	timeout, _ := time.ParseDuration("30s")
 	article, err := readability.FromURL(url.String(), timeout)
 
 	if err != nil {
@@ -424,7 +434,7 @@ func generateFiles(maxArticles uint) error {
 		} else {
 			title, XMLcontent, err := getReadableArticle(pocketItem.url)
 			if err != nil {
-				fmt.Println("Could not get readable article")
+				fmt.Println(fmt.Sprintf("Could not get readable article: %s (%s)", err, pocketItem.url))
 				registerHandled(pocketItem)
 				continue
 			}
