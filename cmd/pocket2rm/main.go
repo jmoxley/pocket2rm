@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	fmt.Println("start programm")
+	fmt.Println("start program")
 	var maxFiles uint = 10
 	if reloadFileExists() {
 		fmt.Println("reload file exists")

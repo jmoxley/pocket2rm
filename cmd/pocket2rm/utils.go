@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -54,6 +55,7 @@ type pocketItem struct {
 	url   *url.URL
 	added time.Time
 	title string
+	tags  map[string]PocketTag
 }
 
 //ByAdded silence lint
@@ -98,16 +100,28 @@ type PocketResult struct {
 	Since    int
 }
 
+type PocketModifyResult struct {
+	Results []string
+	Errors  []string
+	Status  int
+}
+
+type PocketTag struct {
+	ItemId string `json:"item_id"`
+	Tag    string `json:"tag"`
+}
+
 // Item silence lint
 type Item struct {
-	ItemID        string `json:"item_id"`
-	ResolvedID    string `json:"resolved_id"`
-	GivenURL      string `json:"given_url"`
-	ResolvedURL   string `json:"resolved_url"`
-	GivenTitle    string `json:"given_title"`
-	ResolvedTitle string `json:"resolved_title"`
-	IsArticle     int    `json:"is_article,string"`
-	TimeAdded     Time   `json:"time_added"`
+	ItemID        string               `json:"item_id"`
+	ResolvedID    string               `json:"resolved_id"`
+	GivenURL      string               `json:"given_url"`
+	ResolvedURL   string               `json:"resolved_url"`
+	GivenTitle    string               `json:"given_title"`
+	ResolvedTitle string               `json:"resolved_title"`
+	IsArticle     int                  `json:"is_article,string"`
+	TimeAdded     Time                 `json:"time_added"`
+	Tags          map[string]PocketTag `json:"tags"`
 }
 
 // PocketRetrieve silence lint
@@ -117,6 +131,18 @@ type PocketRetrieve struct {
 	Count       string `json:"count"`
 	DetailType  string `json:"detailType"`
 	Sort        string `json:"sort"`
+}
+
+type PocketModify struct {
+	ConsumerKey string `json:"consumer_key"`
+	AccessToken string `json:"access_token"`
+	Actions     []PocketModifyActions `json:"actions"`
+}
+
+type PocketModifyActions struct {
+	Action string `json:"action"`
+	ItemID string `json:"item_id"`
+    Tags   string `json:"tags"`
 }
 
 // Time silence lint
@@ -231,7 +257,7 @@ func writeConfig(config Config) {
 	if len(config.RequestParams) == 0 {
 		config.RequestParams = map[string]string{
 			"count": "15",
-			"detailType": "simple",
+			"detailType": "complete",
 			"sort": "newest",
 		}
 	}
@@ -371,11 +397,11 @@ func getPocketItems() ([]pocketItem, error) {
 	var items []pocketItem
 	for id, item := range retrieveResult.List {
 		parsedURL, _ := url.Parse(item.ResolvedURL)
-		items = append(items, pocketItem{id, parsedURL, time.Time(item.TimeAdded), item.Title()})
+		items = append(items, pocketItem{id, parsedURL, time.Time(item.TimeAdded), item.Title(), item.Tags})
 	}
 
 	// sort by latest added article first
-	//sort.Sort(sort.Reverse(ByAdded(items)))
+	sort.Sort(sort.Reverse(ByAdded(items)))
 	return items, nil
 }
 
@@ -389,19 +415,50 @@ func getFilename(timeAdded time.Time, title string) string {
 }
 
 func alreadyHandled(article pocketItem) bool {
-	config := getConfig()
-	for _, articleID := range config.HandledArticles {
-		if article.id == articleID {
+	for _, tag := range article.tags {
+		if tag.Tag == "remarkable" {
 			return true
 		}
 	}
+
 	return false
 }
 
 func registerHandled(article pocketItem) {
 	config := getConfig()
-	config.HandledArticles = append(config.HandledArticles, article.id)
-	writeConfig(config)
+
+	modifyResult := &PocketModifyResult{}
+
+	actions := []PocketModifyActions{
+		{"tags_add", article.id, "remarkable"},
+		{"archive", article.id, ""},
+	}
+
+	body, _ := json.Marshal(PocketModify{
+		config.ConsumerKey,
+		config.AccessToken,
+		actions,
+	})
+
+	req, _ := http.NewRequest("POST", "https://getpocket.com/v3/send", bytes.NewReader(body))
+	req.Header.Add("X-Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if resp.StatusCode != 200 {
+		err := fmt.Errorf("got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
+		fmt.Println(err.Error())
+	}
+
+	defer resp.Body.Close()
+	err = json.NewDecoder(resp.Body).Decode(modifyResult)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func getReadableArticle(url *url.URL) (string, string, error) {
