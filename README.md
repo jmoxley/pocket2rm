@@ -13,7 +13,7 @@
 - browser (necessary for OAuth2)
 
 ## Installation
-- create a pocket application: [https://getpocket.com/developer/apps/new](https://getpocket.com/developer/apps/new) to obtain a `consumerKey`. The application only needs the 'Retrieve' permission.
+- create a pocket application: [https://getpocket.com/developer/apps/new](https://getpocket.com/developer/apps/new) to obtain a `consumerKey`. The application needs the 'Retrieve' and 'Modify' permissions.
 
 - clone or download this repository
 - run:

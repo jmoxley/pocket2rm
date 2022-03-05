@@ -227,6 +227,15 @@ func reloadFileExists() bool {
 
 func writeConfig(config Config) {
 	configPath := getConfigPath()
+
+	if len(config.RequestParams) == 0 {
+		config.RequestParams = map[string]string{
+			"count": "15",
+			"detailType": "simple",
+			"sort": "newest",
+		}
+	}
+
 	ymlContent, _ := yaml.Marshal(config)
 	_ = ioutil.WriteFile(configPath, ymlContent, os.ModePerm)
 }
