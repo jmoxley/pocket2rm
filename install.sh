@@ -50,7 +50,9 @@ compile_bin_files() {
   printf "pocket2rm successfully compiled"
 
   printf "\n\n"
-  "$INSTALL_SCRIPT_DIR/cmd/pocket2rm-setup/main"
+  if [ "$1" != "rebuild" ]; then
+    "$INSTALL_SCRIPT_DIR/cmd/pocket2rm-setup/main"
+  fi
   printf "\n"
 }
 
@@ -84,9 +86,9 @@ main() {
   read  -r -p "Enter your Remarkable IP address [10.11.99.1]: " REMARKABLE_IP
   REMARKABLE_IP=${REMARKABLE_IP:-10.11.99.1}
   
-  if [ ! -f "$HOME/.pocket2rm" ]; then
+  if [ ! -f "$HOME/.pocket2rm" ] || [ "$1" == "rebuild" ]; then
     check_go
-    compile_bin_files
+    compile_bin_files "$1"
     copy_bin_files_to_remarkable
   fi
 
@@ -96,4 +98,4 @@ main() {
   printf "\npocket2rm successfully installed on your Remarkable\n"
 }
 
-main
+main "${1-}"

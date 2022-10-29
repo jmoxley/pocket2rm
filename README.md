@@ -29,6 +29,14 @@ After a reMarkable software update, you will need to rerun the install script:
 ./install.sh
 ```
 
+## pocket2rm updates
+If there is an update to pocket2rm, you will need to run the install script with `rebuild` argument to update the binaries
+without the getpocket.com setup
+
+```
+./install.sh rebuild
+```
+
 ## Reinstall
 
 If for some reason you need/want to reinstall pocket2rm completely :
