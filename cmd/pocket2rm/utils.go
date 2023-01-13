@@ -17,8 +17,10 @@ import (
 
 	pdf "github.com/balacode/one-file-pdf"
 	"github.com/bmaupin/go-epub"
+	"github.com/go-shiori/dom"
 	"github.com/go-shiori/go-readability"
 	"github.com/google/uuid"
+	"golang.org/x/net/html"
 	"gopkg.in/yaml.v3"
 )
 
@@ -472,12 +474,30 @@ func getReadableArticle(url *url.URL) (string, string, error) {
 		return "", "", err
 	}
 
+	// Strip duplicate id attributes from tags
+	article.Content = cleanDuplicateIds(article.Node)
+
 	// Include title and source URL in beginning of content
 	content := fmt.Sprintf(`<h1> %s </h1>
 		<a href="%s">%s</a>
 		%s`, article.Title, url.String(), url.String(), article.Content)
 
 	return article.Title, content, nil
+}
+
+func cleanDuplicateIds(doc *html.Node) string {
+	var cleanId func(*html.Node, int)
+
+	cleanId = func(node *html.Node, idx int) {
+		attribute := dom.GetAttribute(node, "id")
+		dom.RemoveAttribute(node, "id")
+		dom.SetAttribute(node, "id", attribute)
+	}
+
+	nodeList := dom.QuerySelectorAll(doc, "[id]")
+	dom.ForEachNode(nodeList, cleanId)
+
+	return dom.OuterHTML(doc)
 }
 
 func generateFiles(maxArticles uint) error {
