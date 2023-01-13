@@ -129,6 +129,7 @@ type PocketRetrieve struct {
 	ConsumerKey string `json:"consumer_key"`
 	AccessToken string `json:"access_token"`
 	Count       string `json:"count"`
+	ContentType string `json:"contentType"`
 	DetailType  string `json:"detailType"`
 	Sort        string `json:"sort"`
 }
@@ -256,9 +257,10 @@ func writeConfig(config Config) {
 
 	if len(config.RequestParams) == 0 {
 		config.RequestParams = map[string]string{
-			"count":      "15",
-			"detailType": "complete",
-			"sort":       "newest",
+			"count":       "15",
+			"contentType": "article",
+			"detailType":  "complete",
+			"sort":        "newest",
 		}
 	}
 
@@ -371,6 +373,7 @@ func getPocketItems() ([]pocketItem, error) {
 		config.ConsumerKey,
 		config.AccessToken,
 		config.RequestParams["count"],
+		config.RequestParams["contentType"],
 		config.RequestParams["detailType"],
 		config.RequestParams["sort"],
 	})
