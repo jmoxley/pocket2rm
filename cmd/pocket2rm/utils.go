@@ -22,21 +22,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//ExtraMetaData silence lint
+// ExtraMetaData silence lint
 type ExtraMetaData struct {
 }
 
-//Config silence lint
+// Config silence lint
 type Config struct {
-	ConsumerKey      string              `yaml:"consumerKey"`
-	AccessToken      string              `yaml:"accessToken"`
-	RequestParams    map[string]string   `yaml:"requestParams"`
-	ReloadUUID       string              `yaml:"reloadUUID"`
-	PocketFolderUUID string              `yaml:"pocketFolderUUID"`
-	HandledArticles  []string            `yaml:"handledArticles"` //id of article //TODO: should be converted to set for better time complexity
+	ConsumerKey      string            `yaml:"consumerKey"`
+	AccessToken      string            `yaml:"accessToken"`
+	RequestParams    map[string]string `yaml:"requestParams"`
+	ReloadUUID       string            `yaml:"reloadUUID"`
+	PocketFolderUUID string            `yaml:"pocketFolderUUID"`
+	HandledArticles  []string          `yaml:"handledArticles"` //id of article //TODO: should be converted to set for better time complexity
 }
 
-//MetaData silence lint
+// MetaData silence lint
 type MetaData struct {
 	Deleted          bool   `json:"deleted"`
 	LastModified     uint   `json:"lastModified"`
@@ -58,14 +58,14 @@ type pocketItem struct {
 	tags  map[string]PocketTag
 }
 
-//ByAdded silence lint
+// ByAdded silence lint
 type ByAdded []pocketItem
 
 func (a ByAdded) Len() int           { return len(a) }
 func (a ByAdded) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByAdded) Less(i, j int) bool { return a[i].added.Before(a[j].added) }
 
-//Transform silence lint
+// Transform silence lint
 type Transform struct {
 	M11 int `json:"m11"`
 	M12 int `json:"m12"`
@@ -134,21 +134,21 @@ type PocketRetrieve struct {
 }
 
 type PocketModify struct {
-	ConsumerKey string `json:"consumer_key"`
-	AccessToken string `json:"access_token"`
+	ConsumerKey string                `json:"consumer_key"`
+	AccessToken string                `json:"access_token"`
 	Actions     []PocketModifyActions `json:"actions"`
 }
 
 type PocketModifyActions struct {
 	Action string `json:"action"`
 	ItemID string `json:"item_id"`
-    Tags   string `json:"tags"`
+	Tags   string `json:"tags"`
 }
 
 // Time silence lint
 type Time time.Time
 
-//UnmarshalJSON silence lint
+// UnmarshalJSON silence lint
 func (t *Time) UnmarshalJSON(b []byte) error {
 	i, err := strconv.ParseInt(string(bytes.Trim(b, `"`)), 10, 64)
 	if err != nil {
@@ -214,7 +214,7 @@ func getMetadataContent(visibleName string, parentUUID string, fileType string, 
 	return content
 }
 
-//check both if file is present and (metadata deleted=false or file in trash)
+// check both if file is present and (metadata deleted=false or file in trash)
 func pdfIsPresent(uuid string) bool {
 
 	pdfPath := filepath.Join(articeFolderPath(), uuid+".pdf")
@@ -256,9 +256,9 @@ func writeConfig(config Config) {
 
 	if len(config.RequestParams) == 0 {
 		config.RequestParams = map[string]string{
-			"count": "15",
+			"count":      "15",
 			"detailType": "complete",
-			"sort": "newest",
+			"sort":       "newest",
 		}
 	}
 
@@ -405,7 +405,7 @@ func getPocketItems() ([]pocketItem, error) {
 	return items, nil
 }
 
-//generate filename from time added and title
+// generate filename from time added and title
 func getFilename(timeAdded time.Time, title string) string {
 	// fileType: "epub" or "pdf"
 	title = strings.Join(strings.Fields(title), "-")
