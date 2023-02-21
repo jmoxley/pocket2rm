@@ -474,8 +474,9 @@ func getReadableArticle(url *url.URL) (string, string, error) {
 		return "", "", err
 	}
 
-	// Strip duplicate id attributes from tags
-	article.Content = cleanDuplicateIds(article.Node)
+	// Strip duplicate attributes from tags
+	article.Content = cleanDuplicateAtrtibutess(article.Node, "id")
+	article.Content = cleanDuplicateAtrtibutess(article.Node, "alt")
 
 	// Include title and source URL in beginning of content
 	content := fmt.Sprintf(`<h1> %s </h1>
@@ -485,16 +486,16 @@ func getReadableArticle(url *url.URL) (string, string, error) {
 	return article.Title, content, nil
 }
 
-func cleanDuplicateIds(doc *html.Node) string {
+func cleanDuplicateAtrtibutess(doc *html.Node, attrName string) string {
 	var cleanId func(*html.Node, int)
 
 	cleanId = func(node *html.Node, idx int) {
-		attribute := dom.GetAttribute(node, "id")
-		dom.RemoveAttribute(node, "id")
-		dom.SetAttribute(node, "id", attribute)
+		attribute := dom.GetAttribute(node, attrName)
+		dom.RemoveAttribute(node, attrName)
+		dom.SetAttribute(node, attrName, attribute)
 	}
 
-	nodeList := dom.QuerySelectorAll(doc, "[id]")
+	nodeList := dom.QuerySelectorAll(doc, "["+attrName+"]")
 	dom.ForEachNode(nodeList, cleanId)
 
 	return dom.OuterHTML(doc)
