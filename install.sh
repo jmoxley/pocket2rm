@@ -58,7 +58,9 @@ compile_bin_files() {
 
 copy_bin_files_to_remarkable() {
   cd "$INSTALL_SCRIPT_DIR"
-  scp "$HOME/.pocket2rm" root@"$REMARKABLE_IP":/home/root/.
+  if [ "$1" != "rebuild" ]; then
+    scp "$HOME/.pocket2rm" root@"$REMARKABLE_IP":/home/root/.
+  fi
   ssh root@"$REMARKABLE_IP" systemctl stop pocket2rm 2> /dev/null;
   ssh root@"$REMARKABLE_IP" systemctl stop pocket2rm-reload 2> /dev/null;
   scp cmd/pocket2rm/pocket2rm.arm root@"$REMARKABLE_IP":/home/root/.
@@ -89,7 +91,7 @@ main() {
   if [ ! -f "$HOME/.pocket2rm" ] || [ "$1" == "rebuild" ]; then
     check_go
     compile_bin_files "$1"
-    copy_bin_files_to_remarkable
+    copy_bin_files_to_remarkable "$1"
   fi
 
   copy_service_files_to_remarkable
