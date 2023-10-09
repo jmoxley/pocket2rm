@@ -475,8 +475,10 @@ func getReadableArticle(url *url.URL) (string, string, error) {
 	}
 
 	// Strip duplicate attributes from tags
-	article.Content = cleanDuplicateAtrtibutess(article.Node, "id")
-	article.Content = cleanDuplicateAtrtibutess(article.Node, "alt")
+	if article.Node != nil {
+		article.Content = cleanDuplicateAtrtibutess(article.Node, "id")
+		article.Content = cleanDuplicateAtrtibutess(article.Node, "alt")
+	}
 
 	// Include title and source URL in beginning of content
 	content := fmt.Sprintf(`<h1> %s </h1>
