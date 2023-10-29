@@ -41,7 +41,7 @@ type Config struct {
 // MetaData silence lint
 type MetaData struct {
 	Deleted          bool   `json:"deleted"`
-	LastModified     uint   `json:"lastModified"`
+	LastModified     string `json:"lastModified"`
 	Metadatamodified bool   `json:"metadatamodified"`
 	Modified         bool   `json:"modified"`
 	Parent           string `json:"parent"` //uuid or "trash"
@@ -211,7 +211,7 @@ func getDotContentContent(fileType string) []byte {
 	return content
 }
 
-func getMetadataContent(visibleName string, parentUUID string, fileType string, lastModified uint) []byte {
+func getMetadataContent(visibleName string, parentUUID string, fileType string, lastModified string) []byte {
 	metadataContent := MetaData{false, lastModified, false, false, parentUUID, false, false, fileType, 1, visibleName}
 	content, _ := json.Marshal(metadataContent)
 	return content
@@ -294,7 +294,7 @@ func generateReloadFile() {
 // uuid is returned
 func generateEpub(visibleName string, fileContent []byte) string {
 
-	var lastModified uint = 1 //TODO number too big. maybe need custom marshal: http://choly.ca/post/go-json-marshalling/
+	var lastModified = fmt.Sprintf("%d", time.Now().Unix())
 
 	config := getConfig()
 	fileUUID := uuid.New().String()
@@ -335,7 +335,7 @@ func createEpubFileContent(title string, content string) []byte {
 
 func generatePDF(visibleName string, fileContent []byte) string {
 
-	var lastModified uint = 1 //TODO number too big. maybe need custom marshal: http://choly.ca/post/go-json-marshalling/
+	var lastModified = fmt.Sprintf("%d", time.Now().Unix())
 
 	config := getConfig()
 	fileUUID := uuid.New().String()
@@ -552,7 +552,7 @@ func pocketFolderExists() bool {
 }
 
 func generateTopLevelFolder(folderName string) string {
-	var lastModified uint = 1 //TODO number too big. maybe need custom marshal: http://choly.ca/post/go-json-marshalling/
+	var lastModified = fmt.Sprintf("%d", time.Now().Unix())
 	fileUUID := uuid.New().String()
 
 	fileName := filepath.Join(articeFolderPath(), fileUUID+".content")
