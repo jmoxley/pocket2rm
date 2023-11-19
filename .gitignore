@@ -22,8 +22,5 @@ articles
 #MAC OS
 .DS_Store
 
-go.mod
-go.sum
-
 # IDE files
 .idea
