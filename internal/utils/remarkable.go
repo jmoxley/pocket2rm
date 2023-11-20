@@ -77,7 +77,7 @@ func generateEpub(visibleName string, fileContent []byte) string {
 	fileName = filepath.Join(articeFolderPath(), fileUUID+".content")
 	writeFile(fileName, fileContent)
 
-	fileContent = getMetadataContent(visibleName, config.PocketFolderUUID, "DocumentType", lastModified)
+	fileContent = getMetadataContent(visibleName, config.TargetFolderUUID, "DocumentType", lastModified)
 	fileName = filepath.Join(articeFolderPath(), fileUUID+".metadata")
 	writeFile(fileName, fileContent)
 
@@ -98,17 +98,17 @@ func generatePDF(visibleName string, fileContent []byte) string {
 	fileName = filepath.Join(articeFolderPath(), fileUUID+".content")
 	writeFile(fileName, fileContent)
 
-	fileContent = getMetadataContent(visibleName, config.PocketFolderUUID, "DocumentType", lastModified)
+	fileContent = getMetadataContent(visibleName, config.TargetFolderUUID, "DocumentType", lastModified)
 	fileName = filepath.Join(articeFolderPath(), fileUUID+".metadata")
 	writeFile(fileName, fileContent)
 
 	return fileUUID
 }
 
-func GeneratePocketFolder() {
-	pocketFolderUUID := generateTopLevelFolder("pocket")
+func GenerateTargetFolder() {
 	config := getConfig()
-	config.PocketFolderUUID = pocketFolderUUID
+	targetFolderUUID := generateTopLevelFolder(config.Service)
+	config.TargetFolderUUID = targetFolderUUID
 	writeConfig(config)
 }
 
@@ -160,9 +160,9 @@ func getMetadataContent(visibleName string, parentUUID string, fileType string, 
 	return content
 }
 
-func PocketFolderExists() bool {
+func TargetFolderExists() bool {
 	config := getConfig()
-	folderUUID := config.PocketFolderUUID
+	folderUUID := config.TargetFolderUUID
 	return folderIsPresent(folderUUID)
 }
 

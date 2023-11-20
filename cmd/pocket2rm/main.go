@@ -12,9 +12,9 @@ func main() {
 		fmt.Println("reload file exists")
 	} else {
 		fmt.Println("no reload file")
-		if !u.PocketFolderExists() {
+		if !u.TargetFolderExists() {
 			fmt.Println("no pocket folder")
-			u.GeneratePocketFolder()
+			u.GenerateTargetFolder()
 		}
 		u.GenerateReloadFile()
 		u.GenerateFiles(maxFiles)

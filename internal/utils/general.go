@@ -22,12 +22,10 @@ import (
 )
 
 type Config struct {
-	ConsumerKey      string            `yaml:"consumerKey"`
-	AccessToken      string            `yaml:"accessToken"`
-	RequestParams    map[string]string `yaml:"requestParams"`
-	ReloadUUID       string            `yaml:"reloadUUID"`
-	PocketFolderUUID string            `yaml:"pocketFolderUUID"`
-	HandledArticles  []string          `yaml:"handledArticles"` //id of article //TODO: should be converted to set for better time complexity
+	Service          string       `yaml:"service"`
+	ReloadUUID       string       `yaml:"reloadUUID"`
+	TargetFolderUUID string       `yaml:"pocketFolderUUID"`
+	Pocket           PocketConfig `yaml:"pocket,omitempty"`
 }
 
 type Time time.Time
@@ -136,8 +134,12 @@ func getUserHomeDir() string {
 func writeConfig(config Config) {
 	configPath := getConfigPath()
 
-	if len(config.RequestParams) == 0 {
-		config.RequestParams = map[string]string{
+	if len(config.Service) == 0 {
+		config.Service = "service"
+	}
+
+	if len(config.Pocket.RequestParams) < 4 {
+		config.Pocket.RequestParams = map[string]string{
 			"count":       "15",
 			"contentType": "article",
 			"detailType":  "complete",

@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+type PocketConfig struct {
+	ConsumerKey   string            `yaml:"consumerKey"`
+	AccessToken   string            `yaml:"accessToken"`
+	RequestParams map[string]string `yaml:"requestParams"`
+}
+
 type ByAdded []pocketItem
 
 func (a ByAdded) Len() int           { return len(a) }
@@ -107,12 +113,12 @@ func getPocketItems() ([]pocketItem, error) {
 	retrieveResult := &PocketResult{}
 
 	body, _ := json.Marshal(PocketRetrieve{
-		config.ConsumerKey,
-		config.AccessToken,
-		config.RequestParams["count"],
-		config.RequestParams["contentType"],
-		config.RequestParams["detailType"],
-		config.RequestParams["sort"],
+		config.Pocket.ConsumerKey,
+		config.Pocket.AccessToken,
+		config.Pocket.RequestParams["count"],
+		config.Pocket.RequestParams["contentType"],
+		config.Pocket.RequestParams["detailType"],
+		config.Pocket.RequestParams["sort"],
 	})
 
 	req, _ := http.NewRequest("POST", "https://getpocket.com/v3/get", bytes.NewReader(body))
@@ -166,8 +172,8 @@ func registerHandled(article pocketItem) {
 	}
 
 	body, _ := json.Marshal(PocketModify{
-		config.ConsumerKey,
-		config.AccessToken,
+		config.Pocket.ConsumerKey,
+		config.Pocket.AccessToken,
 		actions,
 	})
 
