@@ -3,7 +3,7 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -67,19 +67,19 @@ func createEpubFileContent(title string, content string) []byte {
 	_ = e.Write(tmpName)
 	defer os.Remove(tmpName)
 
-	fileContent, _ := ioutil.ReadFile(tmpName)
+	fileContent, _ := os.ReadFile(tmpName)
 	return fileContent
 }
 
 func createPDFFileContent(url string) []byte {
 	resp, _ := http.Get(url)
 	defer resp.Body.Close()
-	content, _ := ioutil.ReadAll(resp.Body)
+	content, _ := io.ReadAll(resp.Body)
 	return content
 }
 
 func getConfig() Config {
-	fileContent, _ := ioutil.ReadFile(getConfigPath())
+	fileContent, _ := os.ReadFile(getConfigPath())
 	var config Config
 	yaml.Unmarshal(fileContent, &config)
 	return config
@@ -146,13 +146,13 @@ func writeConfig(config Config) {
 	}
 
 	ymlContent, _ := yaml.Marshal(config)
-	_ = ioutil.WriteFile(configPath, ymlContent, os.ModePerm)
+	_ = os.WriteFile(configPath, ymlContent, os.ModePerm)
 }
 
 func writeFile(fileName string, fileContent []byte) {
 
 	// write the whole body at once
-	err := ioutil.WriteFile(fileName, fileContent, 0644)
+	err := os.WriteFile(fileName, fileContent, 0644)
 	if err != nil {
 		panic(err)
 	}
