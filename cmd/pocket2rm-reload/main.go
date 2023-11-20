@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 	"time"
+
+	u "pocket2rm/internal/utils"
 )
 
 func startPocket2rm() {
@@ -12,11 +14,11 @@ func startPocket2rm() {
 }
 
 func main() {
-	fmt.Println("start programm")
+	fmt.Println("start program")
 	for {
 		fmt.Println("sleep for 10 secs")
 		time.Sleep(10 * time.Second)
-		if reloadFileExists() {
+		if u.ReloadFileExists() {
 			fmt.Println("reload file exists")
 		} else {
 			fmt.Println("no reload file, starting pocket2rm")
