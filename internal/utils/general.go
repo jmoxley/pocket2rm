@@ -22,10 +22,18 @@ import (
 )
 
 type Config struct {
-	Service          string       `yaml:"service"`
-	ReloadUUID       string       `yaml:"reloadUUID"`
-	TargetFolderUUID string       `yaml:"pocketFolderUUID"`
-	Pocket           PocketConfig `yaml:"pocket,omitempty"`
+	Service          string         `yaml:"service"`
+	ReloadUUID       string         `yaml:"reloadUUID"`
+	TargetFolderUUID string         `yaml:"targetFolderUUID"`
+	Pocket           PocketConfig   `yaml:"pocket,omitempty"`
+}
+
+type Service struct {
+	Name string
+}
+
+type Generator interface {
+	GenerateFiles(maxArticles uint) error
 }
 
 type Time time.Time
@@ -74,6 +82,18 @@ func createPDFFileContent(url string) []byte {
 	defer resp.Body.Close()
 	content, _ := io.ReadAll(resp.Body)
 	return content
+}
+
+func GenerateFiles(maxArticles uint) error {
+	config := getConfig()
+
+	switch config.Service {
+	case "pocket":
+		service := PocketService{config.Service}
+		return service.GenerateFiles(maxArticles)
+	}
+
+	return nil
 }
 
 func getConfig() Config {

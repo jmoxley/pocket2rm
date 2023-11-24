@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+type PocketService Service
+
 type PocketConfig struct {
 	ConsumerKey   string            `yaml:"consumerKey"`
 	AccessToken   string            `yaml:"accessToken"`
@@ -198,8 +200,8 @@ func registerHandled(article pocketItem) {
 	}
 }
 
-func GenerateFiles(maxArticles uint) error {
-	fmt.Println("inside generateFiles")
+func (s PocketService) GenerateFiles(maxArticles uint) error {
+	fmt.Println("inside generateFiles (pocket)")
 	pocketArticles, err := getPocketItems()
 	if err != nil {
 		fmt.Println("Could not get pocket articles: ", err)

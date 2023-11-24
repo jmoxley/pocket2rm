@@ -13,7 +13,7 @@ func main() {
 	} else {
 		fmt.Println("no reload file")
 		if !u.TargetFolderExists() {
-			fmt.Println("no pocket folder")
+			fmt.Println("no target folder")
 			u.GenerateTargetFolder()
 		}
 		u.GenerateReloadFile()
