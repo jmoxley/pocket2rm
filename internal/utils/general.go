@@ -26,6 +26,7 @@ type Config struct {
 	ReloadUUID       string         `yaml:"reloadUUID"`
 	TargetFolderUUID string         `yaml:"targetFolderUUID"`
 	Pocket           PocketConfig   `yaml:"pocket,omitempty"`
+	Omnivore         OmnivoreConfig `yaml:"omnivore,omitempty"`
 }
 
 type Service struct {
@@ -90,6 +91,9 @@ func GenerateFiles(maxArticles uint) error {
 	switch config.Service {
 	case "pocket":
 		service := PocketService{config.Service}
+		return service.GenerateFiles(maxArticles)
+	case "omnivore":
+		service := OmnivoreService{config.Service}
 		return service.GenerateFiles(maxArticles)
 	}
 
