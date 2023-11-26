@@ -22,18 +22,12 @@ import (
 )
 
 type Config struct {
-	Service          string         `yaml:"service"`
-	ReloadUUID       string         `yaml:"reloadUUID"`
-	TargetFolderUUID string         `yaml:"targetFolderUUID"`
-	Pocket           PocketConfig   `yaml:"pocket,omitempty"`
-	Omnivore         OmnivoreConfig `yaml:"omnivore,omitempty"`
+	Service  string         `yaml:"service"`
+	Pocket   PocketConfig   `yaml:"pocket,omitempty"`
+	Omnivore OmnivoreConfig `yaml:"omnivore,omitempty"`
 }
 
-type Service struct {
-	Name string
-}
-
-type Generator interface {
+type ReaderService interface {
 	GenerateFiles(maxArticles uint) error
 }
 
@@ -85,25 +79,11 @@ func createPDFFileContent(url string) []byte {
 	return content
 }
 
-func GenerateFiles(maxArticles uint) error {
-	config := getConfig()
-
-	switch config.Service {
-	case "pocket":
-		service := PocketService{config.Service}
-		return service.GenerateFiles(maxArticles)
-	case "omnivore":
-		service := OmnivoreService{config.Service}
-		return service.GenerateFiles(maxArticles)
-	}
-
-	return nil
-}
-
-func getConfig() Config {
+func GetConfig() *Config {
 	fileContent, _ := os.ReadFile(getConfigPath())
-	var config Config
+	var config *Config
 	yaml.Unmarshal(fileContent, &config)
+
 	return config
 }
 
@@ -142,6 +122,17 @@ func getReadableArticle(url *url.URL) (string, string, error) {
 		%s`, article.Title, url.String(), url.String(), article.Content)
 
 	return article.Title, content, nil
+}
+
+func GetService(cfg *Config) (ReaderService, error) {
+	switch cfg.Service {
+	case "omnivore":
+		return OmnivoreService{cfg.Service, cfg.Omnivore}, nil
+	case "pocket":
+		return PocketService{cfg.Service, cfg.Pocket}, nil
+	}
+
+	return nil, fmt.Errorf("unknown service: %q", cfg.Service)
 }
 
 func getUserHomeDir() string {

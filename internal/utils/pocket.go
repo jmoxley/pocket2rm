@@ -11,12 +11,17 @@ import (
 	"time"
 )
 
-type PocketService Service
+type PocketService struct {
+	Name   string
+	Config PocketConfig
+}
 
 type PocketConfig struct {
-	ConsumerKey   string            `yaml:"consumerKey"`
-	AccessToken   string            `yaml:"accessToken"`
-	RequestParams map[string]string `yaml:"requestParams"`
+	ReloadUUID       string            `yaml:"reloadUUID"`
+	TargetFolderUUID string            `yaml:"targetFolderUUID"`
+	ConsumerKey      string            `yaml:"consumerKey"`
+	AccessToken      string            `yaml:"accessToken"`
+	RequestParams    map[string]string `yaml:"requestParams"`
 }
 
 type ByAdded []pocketItem
@@ -92,23 +97,23 @@ type PocketTag struct {
 	Tag    string `json:"tag"`
 }
 
-func getPocketItems() ([]pocketItem, error) {
+func (s PocketService) getPocketItems() ([]pocketItem, error) {
 	// unfortunately cannot use github.com/motemen/go-pocket
 	// because of 32bit architecture
 	// Item.ItemID in github.com/motemen/go-pocket is int, which cannot store enough
 	// therefore the necessary types and functions have been copied and adapted
 
-	config := getConfig()
+	config := s.Config
 
 	retrieveResult := &PocketResult{}
 
 	body, _ := json.Marshal(PocketRetrieve{
-		config.Pocket.ConsumerKey,
-		config.Pocket.AccessToken,
-		config.Pocket.RequestParams["count"],
-		config.Pocket.RequestParams["contentType"],
-		config.Pocket.RequestParams["detailType"],
-		config.Pocket.RequestParams["sort"],
+		config.ConsumerKey,
+		config.AccessToken,
+		config.RequestParams["count"],
+		config.RequestParams["contentType"],
+		config.RequestParams["detailType"],
+		config.RequestParams["sort"],
 	})
 
 	req, _ := http.NewRequest("POST", "https://getpocket.com/v3/get", bytes.NewReader(body))
@@ -141,7 +146,7 @@ func getPocketItems() ([]pocketItem, error) {
 	return items, nil
 }
 
-func alreadyHandled(article pocketItem) bool {
+func (s PocketService) alreadyHandled(article pocketItem) bool {
 	for _, tag := range article.tags {
 		if tag.Tag == "remarkable" {
 			return true
@@ -151,8 +156,8 @@ func alreadyHandled(article pocketItem) bool {
 	return false
 }
 
-func registerHandled(article pocketItem) {
-	config := getConfig()
+func (s PocketService) registerHandled(article pocketItem) {
+	config := s.Config
 
 	modifyResult := &PocketModifyResult{}
 
@@ -162,8 +167,8 @@ func registerHandled(article pocketItem) {
 	}
 
 	body, _ := json.Marshal(PocketModify{
-		config.Pocket.ConsumerKey,
-		config.Pocket.AccessToken,
+		config.ConsumerKey,
+		config.AccessToken,
 		actions,
 	})
 
@@ -190,7 +195,7 @@ func registerHandled(article pocketItem) {
 
 func (s PocketService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (pocket)")
-	pocketArticles, err := getPocketItems()
+	pocketArticles, err := s.getPocketItems()
 	if err != nil {
 		fmt.Println("Could not get pocket articles: ", err)
 		return err
@@ -198,7 +203,7 @@ func (s PocketService) GenerateFiles(maxArticles uint) error {
 
 	var processed uint = 0
 	for _, pocketItem := range pocketArticles {
-		if alreadyHandled(pocketItem) {
+		if s.alreadyHandled(pocketItem) {
 			fmt.Println("already handled")
 			continue
 		}
@@ -212,14 +217,14 @@ func (s PocketService) GenerateFiles(maxArticles uint) error {
 			title, XMLcontent, err := getReadableArticle(pocketItem.url)
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Could not get readable article: %s (%s)", err, pocketItem.url))
-				registerHandled(pocketItem)
+				s.registerHandled(pocketItem)
 				continue
 			}
 			fileContent := createEpubFileContent(title, XMLcontent)
 			generateEpub(fileName, fileContent)
 		}
 
-		registerHandled(pocketItem)
+		s.registerHandled(pocketItem)
 		processed++
 		fmt.Println(fmt.Sprintf("progress: %d/%d", processed, maxArticles))
 		if processed == maxArticles {

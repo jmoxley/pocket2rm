@@ -8,6 +8,10 @@ import (
 func main() {
 	fmt.Println("start program")
 	var maxFiles uint = 10
+
+	config := u.GetConfig()
+	svc, _ := u.GetService(config)
+
 	if u.ReloadFileExists() {
 		fmt.Println("reload file exists")
 	} else {
@@ -17,6 +21,6 @@ func main() {
 			u.GenerateTargetFolder()
 		}
 		u.GenerateReloadFile()
-		u.GenerateFiles(maxFiles)
+		_ = svc.GenerateFiles(maxFiles)
 	}
 }

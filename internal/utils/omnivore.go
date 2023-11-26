@@ -10,12 +10,17 @@ import (
 	"time"
 )
 
-type OmnivoreService Service
+type OmnivoreService struct {
+	Name   string
+	Config OmnivoreConfig
+}
 
 type OmnivoreConfig struct {
-	Username string `yaml:"username"`
-	ApiKey   string `yaml:"apiKey"`
-	Query    string `yaml:"query"`
+	ReloadUUID       string `yaml:"reloadUUID"`
+	TargetFolderUUID string `yaml:"targetFolderUUID"`
+	Username         string `yaml:"username"`
+	ApiKey           string `yaml:"apiKey"`
+	Query            string `yaml:"query"`
 }
 
 type retrievePayload struct {
@@ -74,6 +79,7 @@ type searchResultLabel struct {
 func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (omnivore)")
 	searchResults, err := getSearchResults()
+	searchResults, err := s.getSearchResults()
 	if err != nil {
 		fmt.Println("Could not get omnivore articles: ", err)
 		return err
@@ -109,8 +115,8 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	return nil
 }
 
-func getSearchResults() ([]omnivoreItem, error) {
-	config := getConfig()
+func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
+	config := s.Config
 
 	retrieveResult := &searchResultData{}
 
@@ -126,7 +132,7 @@ func getSearchResults() ([]omnivoreItem, error) {
 	req, _ := http.NewRequest("POST", "https://api-prod.omnivore.app/api/graphql", bytes.NewReader(body))
 	req.Header.Add("X-Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", config.Omnivore.ApiKey)
+	req.Header.Add("Authorization", config.ApiKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
