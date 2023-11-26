@@ -45,7 +45,7 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func cleanDuplicateAtrtibutess(doc *html.Node, attrName string) string {
+func cleanDuplicateAttributes(doc *html.Node, attrName string) string {
 	var cleanId func(*html.Node, int)
 
 	cleanId = func(node *html.Node, idx int) {
@@ -83,7 +83,7 @@ func createPDFFileContent(url string) []byte {
 func GetConfig() *Config {
 	fileContent, _ := os.ReadFile(getConfigPath())
 	var config *Config
-	yaml.Unmarshal(fileContent, &config)
+	_ = yaml.Unmarshal(fileContent, &config)
 
 	return config
 }
@@ -113,8 +113,8 @@ func getReadableArticle(url *url.URL) (string, string, error) {
 
 	// Strip duplicate attributes from tags
 	if article.Node != nil {
-		article.Content = cleanDuplicateAtrtibutess(article.Node, "id")
-		article.Content = cleanDuplicateAtrtibutess(article.Node, "alt")
+		article.Content = cleanDuplicateAttributes(article.Node, "id")
+		article.Content = cleanDuplicateAttributes(article.Node, "alt")
 	}
 
 	// Include title and source URL in beginning of content

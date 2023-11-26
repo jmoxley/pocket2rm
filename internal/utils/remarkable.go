@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -78,9 +77,9 @@ func (r Remarkable) folderIsPresent(uuid string) bool {
 		return false
 	}
 
-	fileContent, _ := ioutil.ReadFile(metadataPath)
+	fileContent, _ := os.ReadFile(metadataPath)
 	var metadata MetaData
-	json.Unmarshal(fileContent, &metadata)
+	_ = json.Unmarshal(fileContent, &metadata)
 	return !metadata.Deleted
 }
 
@@ -136,18 +135,18 @@ func (r Remarkable) GenerateTargetFolder() {
 
 func (r Remarkable) GenerateReloadFile() {
 	fmt.Println("writing reloadfile")
-	var pdf = pdf.NewPDF("A4")
+	var pdfFile = pdf.NewPDF("Letter")
 
-	pdf.SetUnits("cm").
+	pdfFile.SetUnits("in").
 		SetFont("Helvetica-Bold", 100).
 		SetColor("Black")
-	pdf.SetXY(3.5, 5).
+	pdfFile.SetXY(1.3, 2).
 		DrawText("Remove")
-	pdf.SetXY(9, 10).
+	pdfFile.SetXY(3.5, 4).
 		DrawText("to")
-	pdf.SetXY(6.5, 15).
+	pdfFile.SetXY(2.5, 6).
 		DrawText("Sync")
-	fileContent := pdf.Bytes()
+	fileContent := pdfFile.Bytes()
 
 	reloadFileUUID := r.generatePDF("remove to sync", fileContent)
 	config := r.Config
@@ -192,16 +191,16 @@ func (r Remarkable) TargetFolderExists() bool {
 func (r Remarkable) pdfIsPresent(uuid string) bool {
 
 	pdfPath := filepath.Join(r.articeFolderPath(), uuid+".pdf")
-	metadaPath := filepath.Join(r.articeFolderPath(), uuid+".metadata")
+	metadataPath := filepath.Join(r.articeFolderPath(), uuid+".metadata")
 	_, err := os.Stat(pdfPath)
 
 	if os.IsNotExist(err) {
 		return false
 	}
 
-	fileContent, _ := ioutil.ReadFile(metadaPath)
+	fileContent, _ := os.ReadFile(metadataPath)
 	var metadata MetaData
-	json.Unmarshal(fileContent, &metadata)
+	_ = json.Unmarshal(fileContent, &metadata)
 	return !metadata.Deleted && metadata.Parent != "trash"
 }
 
