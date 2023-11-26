@@ -97,6 +97,14 @@ type PocketTag struct {
 	Tag    string `json:"tag"`
 }
 
+func (s PocketService) GetRemarkableConfig() *RemarkableConfig {
+	return &RemarkableConfig{
+		Service:          s.Name,
+		ReloadUUID:       s.Config.ReloadUUID,
+		TargetFolderUUID: s.Config.TargetFolderUUID,
+	}
+}
+
 func (s PocketService) getPocketItems() ([]pocketItem, error) {
 	// unfortunately cannot use github.com/motemen/go-pocket
 	// because of 32bit architecture
@@ -195,6 +203,7 @@ func (s PocketService) registerHandled(article pocketItem) {
 
 func (s PocketService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (pocket)")
+	rm := Remarkable{Config: s.GetRemarkableConfig()}
 	pocketArticles, err := s.getPocketItems()
 	if err != nil {
 		fmt.Println("Could not get pocket articles: ", err)
@@ -212,7 +221,7 @@ func (s PocketService) GenerateFiles(maxArticles uint) error {
 		extension := filepath.Ext(pocketItem.url.String())
 		if extension == ".pdf" {
 			fileContent := createPDFFileContent(pocketItem.url.String())
-			generatePDF(fileName, fileContent)
+			rm.generatePDF(fileName, fileContent)
 		} else {
 			title, XMLcontent, err := getReadableArticle(pocketItem.url)
 			if err != nil {
@@ -221,7 +230,7 @@ func (s PocketService) GenerateFiles(maxArticles uint) error {
 				continue
 			}
 			fileContent := createEpubFileContent(title, XMLcontent)
-			generateEpub(fileName, fileContent)
+			rm.generateEpub(fileName, fileContent)
 		}
 
 		s.registerHandled(pocketItem)

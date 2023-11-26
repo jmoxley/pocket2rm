@@ -78,7 +78,7 @@ type searchResultLabel struct {
 
 func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (omnivore)")
-	searchResults, err := getSearchResults()
+	rm := Remarkable{Config: s.GetRemarkableConfig()}
 	searchResults, err := s.getSearchResults()
 	if err != nil {
 		fmt.Println("Could not get omnivore articles: ", err)
@@ -92,7 +92,7 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 		fmt.Println(fileName, extension)
 		if extension == ".pdf" {
 			fileContent := createPDFFileContent(searchResult.URL.String())
-			generatePDF(fileName, fileContent)
+			rm.generatePDF(fileName, fileContent)
 		} else {
 			title, XMLcontent, err := getReadableArticle(searchResult.URL)
 			if err != nil {
@@ -101,7 +101,7 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 				continue
 			}
 			fileContent := createEpubFileContent(title, XMLcontent)
-			generateEpub(fileName, fileContent)
+			rm.generateEpub(fileName, fileContent)
 		}
 
 		//registerHandled(pocketItem)
@@ -113,6 +113,14 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	}
 
 	return nil
+}
+
+func (s OmnivoreService) GetRemarkableConfig() *RemarkableConfig {
+	return &RemarkableConfig{
+		Service:          s.Name,
+		ReloadUUID:       s.Config.ReloadUUID,
+		TargetFolderUUID: s.Config.TargetFolderUUID,
+	}
 }
 
 func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {

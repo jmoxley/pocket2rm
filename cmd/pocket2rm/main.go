@@ -11,16 +11,17 @@ func main() {
 
 	config := u.GetConfig()
 	svc, _ := u.GetService(config)
+	rm := u.Remarkable{Config: svc.GetRemarkableConfig()}
 
-	if u.ReloadFileExists() {
+	if rm.ReloadFileExists() {
 		fmt.Println("reload file exists")
 	} else {
 		fmt.Println("no reload file")
-		if !u.TargetFolderExists() {
+		if !rm.TargetFolderExists() {
 			fmt.Println("no target folder")
-			u.GenerateTargetFolder()
+			rm.GenerateTargetFolder()
 		}
-		u.GenerateReloadFile()
+		rm.GenerateReloadFile()
 		_ = svc.GenerateFiles(maxFiles)
 	}
 }

@@ -12,6 +12,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type Remarkable struct {
+	Config *RemarkableConfig
+}
+
+type RemarkableConfig struct {
+	Service          string
+	ReloadUUID       string
+	TargetFolderUUID string
+}
+
 type DocumentContent struct {
 	ExtraMetadata  ExtraMetaData `json:"extraMetadata"`
 	FileType       string        `json:"fileType"`
@@ -53,15 +63,15 @@ type Transform struct {
 	M33 int `json:"m33"`
 }
 
-func articeFolderPath() string {
+func (r Remarkable) articeFolderPath() string {
 	userHomeDir := getUserHomeDir()
 
 	return filepath.Join(userHomeDir, ".local/share/remarkable/xochitl/")
 }
 
-func folderIsPresent(uuid string) bool {
-	folderPath := filepath.Join(articeFolderPath(), uuid+".content")
-	metadataPath := filepath.Join(articeFolderPath(), uuid+".metadata")
+func (r Remarkable) folderIsPresent(uuid string) bool {
+	folderPath := filepath.Join(r.articeFolderPath(), uuid+".content")
+	metadataPath := filepath.Join(r.articeFolderPath(), uuid+".metadata")
 	_, err := os.Stat(folderPath)
 
 	if os.IsNotExist(err) {
@@ -75,56 +85,56 @@ func folderIsPresent(uuid string) bool {
 }
 
 // uuid is returned
-func generateEpub(visibleName string, fileContent []byte) string {
+func (r Remarkable) generateEpub(visibleName string, fileContent []byte) string {
 
 	var lastModified = fmt.Sprintf("%d", time.Now().Unix())
 
-	config := getConfig()
+	config := r.Config
 	fileUUID := uuid.New().String()
 
-	fileName := filepath.Join(articeFolderPath(), fileUUID+".epub")
+	fileName := filepath.Join(r.articeFolderPath(), fileUUID+".epub")
 	writeFile(fileName, fileContent)
 
-	fileContent = getDotContentContent("epub")
-	fileName = filepath.Join(articeFolderPath(), fileUUID+".content")
+	fileContent = r.getDotContentContent("epub")
+	fileName = filepath.Join(r.articeFolderPath(), fileUUID+".content")
 	writeFile(fileName, fileContent)
 
-	fileContent = getMetadataContent(visibleName, config.TargetFolderUUID, "DocumentType", lastModified)
-	fileName = filepath.Join(articeFolderPath(), fileUUID+".metadata")
+	fileContent = r.getMetadataContent(visibleName, config.TargetFolderUUID, "DocumentType", lastModified)
+	fileName = filepath.Join(r.articeFolderPath(), fileUUID+".metadata")
 	writeFile(fileName, fileContent)
 
 	return fileUUID
 }
 
-func generatePDF(visibleName string, fileContent []byte) string {
+func (r Remarkable) generatePDF(visibleName string, fileContent []byte) string {
 
 	var lastModified = fmt.Sprintf("%d", time.Now().Unix())
 
-	config := getConfig()
+	config := r.Config
 	fileUUID := uuid.New().String()
 
-	fileName := filepath.Join(articeFolderPath(), fileUUID+".pdf")
+	fileName := filepath.Join(r.articeFolderPath(), fileUUID+".pdf")
 	writeFile(fileName, fileContent)
 
-	fileContent = getDotContentContent("pdf")
-	fileName = filepath.Join(articeFolderPath(), fileUUID+".content")
+	fileContent = r.getDotContentContent("pdf")
+	fileName = filepath.Join(r.articeFolderPath(), fileUUID+".content")
 	writeFile(fileName, fileContent)
 
-	fileContent = getMetadataContent(visibleName, config.TargetFolderUUID, "DocumentType", lastModified)
-	fileName = filepath.Join(articeFolderPath(), fileUUID+".metadata")
+	fileContent = r.getMetadataContent(visibleName, config.TargetFolderUUID, "DocumentType", lastModified)
+	fileName = filepath.Join(r.articeFolderPath(), fileUUID+".metadata")
 	writeFile(fileName, fileContent)
 
 	return fileUUID
 }
 
-func GenerateTargetFolder() {
-	config := getConfig()
-	targetFolderUUID := generateTopLevelFolder(config.Service)
+func (r Remarkable) GenerateTargetFolder() {
+	config := r.Config
+	targetFolderUUID := r.generateTopLevelFolder(config.Service)
 	config.TargetFolderUUID = targetFolderUUID
-	writeConfig(config)
+	writeRemarkableConfig(config)
 }
 
-func GenerateReloadFile() {
+func (r Remarkable) GenerateReloadFile() {
 	fmt.Println("writing reloadfile")
 	var pdf = pdf.NewPDF("A4")
 
@@ -139,50 +149,50 @@ func GenerateReloadFile() {
 		DrawText("Sync")
 	fileContent := pdf.Bytes()
 
-	reloadFileUUID := generatePDF("remove to sync", fileContent)
-	config := getConfig()
+	reloadFileUUID := r.generatePDF("remove to sync", fileContent)
+	config := r.Config
 	config.ReloadUUID = reloadFileUUID
-	writeConfig(config)
+	writeRemarkableConfig(config)
 }
 
-func generateTopLevelFolder(folderName string) string {
+func (r Remarkable) generateTopLevelFolder(folderName string) string {
 	var lastModified = fmt.Sprintf("%d", time.Now().Unix())
 	fileUUID := uuid.New().String()
 
-	fileName := filepath.Join(articeFolderPath(), fileUUID+".content")
+	fileName := filepath.Join(r.articeFolderPath(), fileUUID+".content")
 	writeFile(fileName, []byte("{}"))
 
-	fileContent := getMetadataContent(folderName, "", "CollectionType", lastModified)
-	fileName = filepath.Join(articeFolderPath(), fileUUID+".metadata")
+	fileContent := r.getMetadataContent(folderName, "", "CollectionType", lastModified)
+	fileName = filepath.Join(r.articeFolderPath(), fileUUID+".metadata")
 	writeFile(fileName, fileContent)
 
 	return fileUUID
 }
 
-func getDotContentContent(fileType string) []byte {
+func (r Remarkable) getDotContentContent(fileType string) []byte {
 	transform := Transform{1, 0, 0, 0, 1, 0, 0, 0, 1}
 	docContent := DocumentContent{ExtraMetaData{}, fileType, "", 0, -1, 100, "portrait", 1, 1, transform}
 	content, _ := json.Marshal(docContent)
 	return content
 }
 
-func getMetadataContent(visibleName string, parentUUID string, fileType string, lastModified string) []byte {
+func (r Remarkable) getMetadataContent(visibleName string, parentUUID string, fileType string, lastModified string) []byte {
 	metadataContent := MetaData{false, lastModified, false, false, parentUUID, false, false, fileType, 1, visibleName}
 	content, _ := json.Marshal(metadataContent)
 	return content
 }
 
-func TargetFolderExists() bool {
-	config := getConfig()
+func (r Remarkable) TargetFolderExists() bool {
+	config := r.Config
 	folderUUID := config.TargetFolderUUID
-	return folderIsPresent(folderUUID)
+	return r.folderIsPresent(folderUUID)
 }
 
 // check both if file is present and (metadata deleted=false or file in trash)
-func pdfIsPresent(uuid string) bool {
+func (r Remarkable) pdfIsPresent(uuid string) bool {
 
-	pdfPath := filepath.Join(articeFolderPath(), uuid+".pdf")
-	metadaPath := filepath.Join(articeFolderPath(), uuid+".metadata")
+	pdfPath := filepath.Join(r.articeFolderPath(), uuid+".pdf")
+	metadaPath := filepath.Join(r.articeFolderPath(), uuid+".metadata")
 	_, err := os.Stat(pdfPath)
 
 	if os.IsNotExist(err) {
@@ -195,7 +205,7 @@ func pdfIsPresent(uuid string) bool {
 	return !metadata.Deleted && metadata.Parent != "trash"
 }
 
-func ReloadFileExists() bool {
-	config := getConfig()
-	return pdfIsPresent(config.ReloadUUID)
+func (r Remarkable) ReloadFileExists() bool {
+	config := r.Config
+	return r.pdfIsPresent(config.ReloadUUID)
 }

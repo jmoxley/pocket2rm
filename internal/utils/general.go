@@ -29,6 +29,7 @@ type Config struct {
 
 type ReaderService interface {
 	GenerateFiles(maxArticles uint) error
+	GetRemarkableConfig() *RemarkableConfig
 }
 
 type Time time.Time
@@ -146,23 +147,20 @@ func getUserHomeDir() string {
 	return currentUser.HomeDir
 }
 
-func writeConfig(config Config) {
+func writeRemarkableConfig(rmConfig *RemarkableConfig) {
 	configPath := getConfigPath()
+	appConfig := GetConfig()
 
-	if len(config.Service) == 0 {
-		config.Service = "service"
+	switch rmConfig.Service {
+	case "omnivore":
+		appConfig.Omnivore.ReloadUUID = rmConfig.ReloadUUID
+		appConfig.Omnivore.TargetFolderUUID = rmConfig.TargetFolderUUID
+	case "pocket":
+		appConfig.Pocket.ReloadUUID = rmConfig.ReloadUUID
+		appConfig.Pocket.TargetFolderUUID = rmConfig.TargetFolderUUID
 	}
 
-	if len(config.Pocket.RequestParams) < 4 {
-		config.Pocket.RequestParams = map[string]string{
-			"count":       "15",
-			"contentType": "article",
-			"detailType":  "complete",
-			"sort":        "newest",
-		}
-	}
-
-	ymlContent, _ := yaml.Marshal(config)
+	ymlContent, _ := yaml.Marshal(appConfig)
 	_ = os.WriteFile(configPath, ymlContent, os.ModePerm)
 }
 
