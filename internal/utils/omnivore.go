@@ -132,7 +132,7 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 	variables := retrievePayloadVariables{
 		"0",
 		10,
-		"in:inbox sort:saved-des -label:remarkable -label:RSS",
+		config.Query,
 	}
 
 	body, _ := json.Marshal(retrievePayload{query, variables})

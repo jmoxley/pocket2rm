@@ -16,13 +16,18 @@ func startPocket2rm() {
 func main() {
 	fmt.Println("start program")
 
-	config := u.GetAppConfig()
-	svc, _ := u.GetService(config)
-	rm := u.Remarkable{Config: svc.GetRemarkableConfig()}
+	var config *u.AppConfig
+	var svc u.ReaderService
+	var rm u.Remarkable
 
 	for {
 		fmt.Println("sleep for 10 secs")
 		time.Sleep(10 * time.Second)
+
+		config = u.GetAppConfig()
+		svc, _ = u.GetService(config)
+		rm = u.Remarkable{Config: svc.GetRemarkableConfig()}
+
 		if rm.ReloadFileExists() {
 			fmt.Println("reload file exists")
 		} else {
