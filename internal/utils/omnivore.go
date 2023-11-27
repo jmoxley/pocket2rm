@@ -97,14 +97,14 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 			title, XMLcontent, err := getReadableArticle(searchResult.URL)
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Could not get readable article: %s (%s)", err, searchResult.URL))
-				//registerHandled(pocketItem)
+				//s.registerHandled(pocketItem)
 				continue
 			}
 			fileContent := createEpubFileContent(title, XMLcontent)
 			rm.generateEpub(fileName, fileContent)
 		}
 
-		//registerHandled(pocketItem)
+		//s.registerHandled(pocketItem)
 		processed++
 		fmt.Println(fmt.Sprintf("progress: %d/%d", processed, maxArticles))
 		if processed == maxArticles {

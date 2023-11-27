@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -22,6 +23,19 @@ type PocketConfig struct {
 	ConsumerKey      string            `yaml:"consumerKey"`
 	AccessToken      string            `yaml:"accessToken"`
 	RequestParams    map[string]string `yaml:"requestParams"`
+}
+
+type Time time.Time
+
+func (t *Time) UnmarshalJSON(b []byte) error {
+	i, err := strconv.ParseInt(string(bytes.Trim(b, `"`)), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	*t = Time(time.Unix(i, 0))
+
+	return nil
 }
 
 type ByAdded []pocketItem

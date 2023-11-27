@@ -15,10 +15,15 @@ func startPocket2rm() {
 
 func main() {
 	fmt.Println("start program")
+
+	config := u.GetAppConfig()
+	svc, _ := u.GetService(config)
+	rm := u.Remarkable{Config: svc.GetRemarkableConfig()}
+
 	for {
 		fmt.Println("sleep for 10 secs")
 		time.Sleep(10 * time.Second)
-		if u.ReloadFileExists() {
+		if rm.ReloadFileExists() {
 			fmt.Println("reload file exists")
 		} else {
 			fmt.Println("no reload file, starting pocket2rm")

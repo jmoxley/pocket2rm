@@ -9,7 +9,7 @@ func main() {
 	fmt.Println("start program")
 	var maxFiles uint = 10
 
-	config := u.GetConfig()
+	config := u.GetAppConfig()
 	svc, _ := u.GetService(config)
 	rm := u.Remarkable{Config: svc.GetRemarkableConfig()}
 
