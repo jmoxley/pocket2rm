@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/go-shiori/dom"
+	"golang.org/x/net/html"
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -76,6 +79,36 @@ type searchResultLabel struct {
 	Name string `json:"name"`
 }
 
+type articlePayload struct {
+	Query     string                  `json:"query"`
+	Variables articlePayloadVariables `json:"variables"`
+}
+
+type articlePayloadVariables struct {
+	Username string `json:"username"`
+	Slug     string `json:"slug"`
+}
+
+type omnivoreArticle struct {
+	Id      string `json:"id"`
+	Url     string `json:"url"`
+	Title   string `json:"title"`
+	Author  string `json:"author"`
+	Content string `json:"content"`
+}
+
+type articleResultData struct {
+	Data articleResultOuterArticle `json:"data"`
+}
+
+type articleResultOuterArticle struct {
+	Article articleResultArticle `json:"article"`
+}
+
+type articleResultArticle struct {
+	Article omnivoreArticle `json:"article"`
+}
+
 func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (omnivore)")
 	rm := Remarkable{Config: s.GetRemarkableConfig()}
@@ -94,13 +127,13 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 			fileContent := createPDFFileContent(searchResult.URL.String())
 			rm.generatePDF(fileName, fileContent)
 		} else {
-			title, XMLcontent, err := getReadableArticle(searchResult.URL)
+			article, err := s.getArticleContent(searchResult.Slug)
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Could not get readable article: %s (%s)", err, searchResult.URL))
 				//s.registerHandled(pocketItem)
 				continue
 			}
-			fileContent := createEpubFileContent(title, XMLcontent)
+			fileContent := createEpubFileContent(article.Title, article.Content, article.Author)
 			rm.generateEpub(fileName, fileContent)
 		}
 
@@ -175,4 +208,55 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 	}
 
 	return items, nil
+}
+
+// TODO: Break out Omnivore API call to its own method. Same for title/link prepend code
+func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, error) {
+	config := s.Config
+
+	retrieveResult := &articleResultData{}
+
+	query := "query GetArticle($username: String! $slug: String!) { article(username: $username, slug: $slug) { ... on ArticleSuccess { article { id url title author content } } } }"
+	variables := articlePayloadVariables{
+		config.Username,
+		articleId,
+	}
+
+	body, _ := json.Marshal(articlePayload{query, variables})
+
+	req, _ := http.NewRequest("POST", "https://api-prod.omnivore.app/api/graphql", bytes.NewReader(body))
+	req.Header.Add("X-Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", config.ApiKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return omnivoreArticle{}, err
+	}
+
+	if resp.StatusCode != 200 {
+		return omnivoreArticle{}, fmt.Errorf("got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
+	}
+
+	defer resp.Body.Close()
+	err = json.NewDecoder(resp.Body).Decode(retrieveResult)
+	if err != nil {
+		return omnivoreArticle{}, err
+	}
+
+	parsedContent, _ := html.Parse(strings.NewReader(retrieveResult.Data.Article.Article.Content))
+	bodyTag := dom.QuerySelector(parsedContent, "body")
+
+	articleLink := dom.CreateElement("a")
+	dom.SetTextContent(articleLink, retrieveResult.Data.Article.Article.Url)
+	dom.SetAttribute(articleLink, "href", retrieveResult.Data.Article.Article.Url)
+	dom.PrependChild(bodyTag, articleLink)
+
+	articleTitle := dom.CreateElement("h1")
+	dom.SetTextContent(articleTitle, retrieveResult.Data.Article.Article.Title)
+	dom.PrependChild(bodyTag, articleTitle)
+
+	retrieveResult.Data.Article.Article.Content = dom.OuterHTML(parsedContent)
+
+	return retrieveResult.Data.Article.Article, nil
 }
