@@ -23,12 +23,12 @@ type OmnivoreConfig struct {
 	Query            string `yaml:"query"`
 }
 
-type retrievePayload struct {
-	Query     string                   `json:"query"`
-	Variables retrievePayloadVariables `json:"variables"`
+type searchPayload struct {
+	Query     string                 `json:"query"`
+	Variables searchPayloadVariables `json:"variables"`
 }
 
-type retrievePayloadVariables struct {
+type searchPayloadVariables struct {
 	After string `json:"after"`
 	First int    `json:"first"`
 	Query string `json:"query"`
@@ -129,13 +129,13 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 	retrieveResult := &searchResultData{}
 
 	query := "query Search($after: String, $first: Int, $query: String) { search(first: $first, after: $after, query: $query) { ... on SearchSuccess { edges { node { title author slug pageType publishedAt savedAt url labels {name} } } } ... on SearchError { errorCodes } } }"
-	variables := retrievePayloadVariables{
+	variables := searchPayloadVariables{
 		"0",
 		10,
 		config.Query,
 	}
 
-	body, _ := json.Marshal(retrievePayload{query, variables})
+	body, _ := json.Marshal(searchPayload{query, variables})
 
 	req, _ := http.NewRequest("POST", "https://api-prod.omnivore.app/api/graphql", bytes.NewReader(body))
 	req.Header.Add("X-Accept", "application/json")
