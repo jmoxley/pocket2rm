@@ -243,7 +243,7 @@ func (s PocketService) GenerateFiles(maxArticles uint) error {
 				s.registerHandled(pocketItem)
 				continue
 			}
-			fileContent := createEpubFileContent(title, XMLcontent)
+			fileContent := createEpubFileContent(title, XMLcontent, "pocket2rm")
 			rm.generateEpub(fileName, fileContent)
 		}
 

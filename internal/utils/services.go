@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/bmaupin/go-epub"
@@ -31,9 +30,9 @@ func cleanDuplicateAttributes(doc *html.Node, attrName string) string {
 	return dom.OuterHTML(doc)
 }
 
-func createEpubFileContent(title string, content string) []byte {
+func createEpubFileContent(title string, content string, author string) []byte {
 	e := epub.NewEpub(title)
-	e.SetAuthor("pocket2rm")
+	e.SetAuthor(author)
 	_, _ = e.AddSection(content, title, "", "")
 
 	tmpName := "/tmp/epub" + uuid.New().String()[0:5] + ".epub"
@@ -54,9 +53,7 @@ func createPDFFileContent(url string) []byte {
 // generate filename from time added and title
 func getFilename(timeAdded time.Time, title string) string {
 	// fileType: "epub" or "pdf"
-	title = strings.Join(strings.Fields(title), "-")
-	title = strings.Replace(title, "/", "_", -1)
-	fileName := fmt.Sprintf("%s_%s", timeAdded.Format("20060102"), title)
+	fileName := fmt.Sprintf("%s :: %s", timeAdded.Format("20060102-1504"), title)
 	return fileName
 }
 
