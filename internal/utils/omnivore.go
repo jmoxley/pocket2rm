@@ -77,6 +77,18 @@ type omnivoreLabel struct {
 	Name string `json:"name"`
 }
 
+type LabelResultData struct {
+	Data LabelResultOuterLabels
+}
+
+type LabelResultOuterLabels struct {
+	Labels LabelResultLabelList
+}
+
+type LabelResultLabelList struct {
+	Labels []omnivoreLabel `json:"labels"`
+}
+
 type omnivorePayload struct {
 	Query     string      `json:"query"`
 	Variables interface{} `json:"variables"`
@@ -236,6 +248,32 @@ func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, e
 	retrieveResult.Data.Article.Article.Content = dom.OuterHTML(parsedContent)
 
 	return retrieveResult.Data.Article.Article, nil
+}
+
+func (s OmnivoreService) getLabelList() (map[string]string, error) {
+	fmt.Println("getting label list")
+	retrieveResult := &LabelResultData{}
+
+	query := "query GetLabels { labels { ... on LabelsSuccess { labels { ...LabelFields } } ... on LabelsError { errorCodes } } } fragment LabelFields on Label { id name }"
+	var variables interface{}
+
+	resp, err := s.omnivoreRequest(query, variables)
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	defer resp.Body.Close()
+	err = json.NewDecoder(resp.Body).Decode(retrieveResult)
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	labels := map[string]string{}
+	for _, label := range retrieveResult.Data.Labels.Labels {
+		labels[label.Name] = label.Id
+	}
+
+	return labels, nil
 }
 
 func (s OmnivoreService) omnivoreRequest(query string, variables interface{}) (*http.Response, error) {
