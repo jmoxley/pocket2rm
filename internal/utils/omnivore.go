@@ -33,6 +33,7 @@ type searchPayloadVariables struct {
 }
 
 type omnivoreItem struct {
+	Id          string          `json:"id"`
 	Title       string          `json:"title"`
 	Author      string          `json:"author"`
 	Slug        string          `json:"slug"`
@@ -60,6 +61,7 @@ type searchResultNodeList struct {
 }
 
 type searchResultNode struct {
+	Id          string          `json:"id"`
 	Title       string          `json:"title"`
 	Author      string          `json:"author"`
 	Slug        string          `json:"slug"`
@@ -158,7 +160,7 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 
 	retrieveResult := &searchResultData{}
 
-	query := "query Search($after: String, $first: Int, $query: String) { search(first: $first, after: $after, query: $query) { ... on SearchSuccess { edges { node { title author slug pageType publishedAt savedAt url labels { id name } } } } ... on SearchError { errorCodes } } }"
+	query := "query Search($after: String, $first: Int, $query: String) { search(first: $first, after: $after, query: $query) { ... on SearchSuccess { edges { node { id title author slug pageType publishedAt savedAt url labels { id name } } } } ... on SearchError { errorCodes } } }"
 	variables := searchPayloadVariables{
 		"0",
 		10,
@@ -186,6 +188,7 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 		parsedPublishedAt, _ := time.Parse(time.RFC3339, item.Node.PublishedAt)
 		parsedSavedAt, _ := time.Parse(time.RFC3339, item.Node.SavedAt)
 		items = append(items, omnivoreItem{
+			item.Node.Id,
 			item.Node.Title,
 			item.Node.Author,
 			item.Node.Slug,
