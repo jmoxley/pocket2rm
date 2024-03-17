@@ -26,11 +26,6 @@ type OmnivoreConfig struct {
 	Query            string `yaml:"query"`
 }
 
-type searchPayload struct {
-	Query     string                 `json:"query"`
-	Variables searchPayloadVariables `json:"variables"`
-}
-
 type searchPayloadVariables struct {
 	After string `json:"after"`
 	First int    `json:"first"`
@@ -79,9 +74,9 @@ type searchResultLabel struct {
 	Name string `json:"name"`
 }
 
-type articlePayload struct {
-	Query     string                  `json:"query"`
-	Variables articlePayloadVariables `json:"variables"`
+type omnivorePayload struct {
+	Query     string      `json:"query"`
+	Variables interface{} `json:"variables"`
 }
 
 type articlePayloadVariables struct {
@@ -108,6 +103,14 @@ type articleResultOuterArticle struct {
 type articleResultArticle struct {
 	Article omnivoreArticle `json:"article"`
 }
+
+func (s OmnivoreService) GetRemarkableConfig() *RemarkableConfig {
+	return &RemarkableConfig{
+		Service:          s.Name,
+		ReloadUUID:       s.Config.ReloadUUID,
+		TargetFolderUUID: s.Config.TargetFolderUUID,
+	}
+	}
 
 func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (omnivore)")
@@ -148,14 +151,6 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	return nil
 }
 
-func (s OmnivoreService) GetRemarkableConfig() *RemarkableConfig {
-	return &RemarkableConfig{
-		Service:          s.Name,
-		ReloadUUID:       s.Config.ReloadUUID,
-		TargetFolderUUID: s.Config.TargetFolderUUID,
-	}
-}
-
 func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 	config := s.Config
 
@@ -168,14 +163,7 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 		config.Query,
 	}
 
-	body, _ := json.Marshal(searchPayload{query, variables})
-
-	req, _ := http.NewRequest("POST", "https://api-prod.omnivore.app/api/graphql", bytes.NewReader(body))
-	req.Header.Add("X-Accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", config.ApiKey)
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s.omnivoreRequest(query, variables)
 	if err != nil {
 		return []omnivoreItem{}, err
 	}
@@ -210,7 +198,6 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 	return items, nil
 }
 
-// TODO: Break out Omnivore API call to its own method. Same for title/link prepend code
 func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, error) {
 	config := s.Config
 
@@ -222,14 +209,7 @@ func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, e
 		articleId,
 	}
 
-	body, _ := json.Marshal(articlePayload{query, variables})
-
-	req, _ := http.NewRequest("POST", "https://api-prod.omnivore.app/api/graphql", bytes.NewReader(body))
-	req.Header.Add("X-Accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", config.ApiKey)
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s.omnivoreRequest(query, variables)
 	if err != nil {
 		return omnivoreArticle{}, err
 	}
@@ -259,4 +239,19 @@ func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, e
 	retrieveResult.Data.Article.Article.Content = dom.OuterHTML(parsedContent)
 
 	return retrieveResult.Data.Article.Article, nil
+}
+
+func (s OmnivoreService) omnivoreRequest(query string, variables interface{}) (*http.Response, error) {
+	config := s.Config
+
+	body, _ := json.Marshal(omnivorePayload{query, variables})
+
+	req, _ := http.NewRequest("POST", "https://api-prod.omnivore.app/api/graphql", bytes.NewReader(body))
+	req.Header.Add("X-Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", config.ApiKey)
+
+	resp, err := http.DefaultClient.Do(req)
+
+	return resp, err
 }
