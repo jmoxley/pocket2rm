@@ -33,14 +33,14 @@ type searchPayloadVariables struct {
 }
 
 type omnivoreItem struct {
-	Title       string              `json:"title"`
-	Author      string              `json:"author"`
-	Slug        string              `json:"slug"`
-	PageType    string              `json:"pageType"`
-	PublishedAt time.Time           `json:"publishedAt"`
-	SavedAt     time.Time           `json:"savedAt"`
-	URL         *url.URL            `json:"url"`
-	Labels      []searchResultLabel `json:"labels"`
+	Title       string          `json:"title"`
+	Author      string          `json:"author"`
+	Slug        string          `json:"slug"`
+	PageType    string          `json:"pageType"`
+	PublishedAt time.Time       `json:"publishedAt"`
+	SavedAt     time.Time       `json:"savedAt"`
+	URL         *url.URL        `json:"url"`
+	Labels      []omnivoreLabel `json:"labels"`
 }
 
 type searchResultData struct {
@@ -60,17 +60,18 @@ type searchResultNodeList struct {
 }
 
 type searchResultNode struct {
-	Title       string              `json:"title"`
-	Author      string              `json:"author"`
-	Slug        string              `json:"slug"`
-	PageType    string              `json:"pageType"`
-	PublishedAt string              `json:"publishedAt"`
-	SavedAt     string              `json:"savedAt"`
-	URL         string              `json:"url"`
-	Labels      []searchResultLabel `json:"labels"`
+	Title       string          `json:"title"`
+	Author      string          `json:"author"`
+	Slug        string          `json:"slug"`
+	PageType    string          `json:"pageType"`
+	PublishedAt string          `json:"publishedAt"`
+	SavedAt     string          `json:"savedAt"`
+	URL         string          `json:"url"`
+	Labels      []omnivoreLabel `json:"labels"`
 }
 
-type searchResultLabel struct {
+type omnivoreLabel struct {
+	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -85,11 +86,12 @@ type articlePayloadVariables struct {
 }
 
 type omnivoreArticle struct {
-	Id      string `json:"id"`
-	Url     string `json:"url"`
-	Title   string `json:"title"`
-	Author  string `json:"author"`
-	Content string `json:"content"`
+	Id      string          `json:"id"`
+	Url     string          `json:"url"`
+	Title   string          `json:"title"`
+	Author  string          `json:"author"`
+	Content string          `json:"content"`
+	Labels  []omnivoreLabel `json:"labels"`
 }
 
 type articleResultData struct {
@@ -110,7 +112,7 @@ func (s OmnivoreService) GetRemarkableConfig() *RemarkableConfig {
 		ReloadUUID:       s.Config.ReloadUUID,
 		TargetFolderUUID: s.Config.TargetFolderUUID,
 	}
-	}
+}
 
 func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	fmt.Println("inside generateFiles (omnivore)")
@@ -156,7 +158,7 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 
 	retrieveResult := &searchResultData{}
 
-	query := "query Search($after: String, $first: Int, $query: String) { search(first: $first, after: $after, query: $query) { ... on SearchSuccess { edges { node { title author slug pageType publishedAt savedAt url labels {name} } } } ... on SearchError { errorCodes } } }"
+	query := "query Search($after: String, $first: Int, $query: String) { search(first: $first, after: $after, query: $query) { ... on SearchSuccess { edges { node { title author slug pageType publishedAt savedAt url labels { id name } } } } ... on SearchError { errorCodes } } }"
 	variables := searchPayloadVariables{
 		"0",
 		10,
@@ -203,7 +205,7 @@ func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, e
 
 	retrieveResult := &articleResultData{}
 
-	query := "query GetArticle($username: String! $slug: String!) { article(username: $username, slug: $slug) { ... on ArticleSuccess { article { id url title author content } } } }"
+	query := "query GetArticle($username: String! $slug: String!) { article(username: $username, slug: $slug) { ... on ArticleSuccess { article { id url title author content labels { id name } } } } }"
 	variables := articlePayloadVariables{
 		config.Username,
 		articleId,
