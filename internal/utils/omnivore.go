@@ -24,6 +24,8 @@ type OmnivoreConfig struct {
 	Username         string `yaml:"username"`
 	ApiKey           string `yaml:"apiKey"`
 	Query            string `yaml:"query"`
+	HandledLabel     string `json:"handledLabel"`
+	SkippedLabel     string `json:"skippedLabel"`
 }
 
 type searchPayloadVariables struct {
@@ -120,6 +122,27 @@ type articleResultArticle struct {
 	Article omnivoreArticle `json:"article"`
 }
 
+type setLabelsResultData struct {
+	Data setLabelsResultSetLabels `json:"data"`
+}
+
+type setLabelsResultSetLabels struct {
+	SetLabels setLabelsResultLabelList `json:"setLabels"`
+}
+
+type setLabelsResultLabelList struct {
+	Labels []omnivoreLabel `json:"labels"`
+}
+
+type setLabelsVariables struct {
+	Input setLabelsVariablesInput `json:"input"`
+}
+
+type setLabelsVariablesInput struct {
+	PageId   string   `json:"pageId"`
+	LabelIds []string `json:"labelIds"`
+}
+
 func (s OmnivoreService) GetRemarkableConfig() *RemarkableConfig {
 	return &RemarkableConfig{
 		Service:          s.Name,
@@ -129,6 +152,8 @@ func (s OmnivoreService) GetRemarkableConfig() *RemarkableConfig {
 }
 
 func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
+	config := s.Config
+
 	fmt.Println("inside generateFiles (omnivore)")
 	rm := Remarkable{Config: s.GetRemarkableConfig()}
 	searchResults, err := s.getSearchResults()
@@ -149,14 +174,14 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 			article, err := s.getArticleContent(searchResult.Slug)
 			if err != nil {
 				fmt.Println(fmt.Sprintf("Could not get readable article: %s (%s)", err, searchResult.URL))
-				//s.registerHandled(pocketItem)
+				s.registerHandled(searchResult, config.SkippedLabel)
 				continue
 			}
 			fileContent := createEpubFileContent(article.Title, article.Content, article.Author)
 			rm.generateEpub(fileName, fileContent)
 		}
 
-		//s.registerHandled(pocketItem)
+		s.registerHandled(searchResult, config.HandledLabel)
 		processed++
 		fmt.Println(fmt.Sprintf("progress: %d/%d", processed, maxArticles))
 		if processed == maxArticles {
@@ -165,6 +190,53 @@ func (s OmnivoreService) GenerateFiles(maxArticles uint) error {
 	}
 
 	return nil
+}
+
+func (s OmnivoreService) registerHandled(article omnivoreItem, label string) bool {
+	fmt.Println("Marking article as handled")
+
+	// TODO: Only get label list once per session
+	labelList, err := s.getLabelList()
+	if err != nil {
+		fmt.Println("Could not get list of labels, skipping...")
+		return false
+	}
+	labelId := labelList[label]
+	articleLabels := article.Labels
+	var updatedLabelList []string
+	for _, articleLabel := range articleLabels {
+		updatedLabelList = append(updatedLabelList, articleLabel.Id)
+	}
+	updatedLabelList = append(updatedLabelList, labelId)
+
+	retrieveResult := &setLabelsResultData{}
+
+	query := "mutation SetLabels($input: SetLabelsInput!) { setLabels(input: $input) { ... on SetLabelsSuccess { labels { id name } } ... on SetLabelsError { errorCodes } } }"
+	variables := setLabelsVariables{
+		setLabelsVariablesInput{
+			article.Id,
+			updatedLabelList,
+		},
+	}
+
+	resp, err := s.omnivoreRequest(query, variables)
+	if err != nil {
+		fmt.Println("Could not update article labels")
+		return false
+	}
+
+	defer resp.Body.Close()
+	err = json.NewDecoder(resp.Body).Decode(retrieveResult)
+	if err != nil {
+		return false
+	}
+
+	if len(retrieveResult.Data.SetLabels.Labels) == len(updatedLabelList) {
+		fmt.Println(fmt.Sprintf("Added label '%s' to article", label))
+		return true
+	}
+
+	return false
 }
 
 func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
