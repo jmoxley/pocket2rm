@@ -172,10 +172,6 @@ func (s OmnivoreService) getSearchResults() ([]omnivoreItem, error) {
 		return []omnivoreItem{}, err
 	}
 
-	if resp.StatusCode != 200 {
-		return []omnivoreItem{}, fmt.Errorf("got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
-	}
-
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(retrieveResult)
 	if err != nil {
@@ -219,10 +215,6 @@ func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, e
 		return omnivoreArticle{}, err
 	}
 
-	if resp.StatusCode != 200 {
-		return omnivoreArticle{}, fmt.Errorf("got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
-	}
-
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(retrieveResult)
 	if err != nil {
@@ -257,6 +249,10 @@ func (s OmnivoreService) omnivoreRequest(query string, variables interface{}) (*
 	req.Header.Add("Authorization", config.ApiKey)
 
 	resp, err := http.DefaultClient.Do(req)
+
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("got response %d; X-Error=[%s]", resp.StatusCode, resp.Header.Get("X-Error"))
+	}
 
 	return resp, err
 }
