@@ -305,6 +305,7 @@ func (s OmnivoreService) getArticleContent(articleId string) (omnivoreArticle, e
 		return omnivoreArticle{}, err
 	}
 
+	// TODO: strip extra head and body tags added by Parse()
 	parsedContent, _ := html.Parse(strings.NewReader(retrieveResult.Data.Article.Article.Content))
 	bodyTag := dom.QuerySelector(parsedContent, "body")
 
